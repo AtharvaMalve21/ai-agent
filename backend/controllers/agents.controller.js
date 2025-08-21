@@ -52,7 +52,6 @@ exports.addAgent = async (req, res) => {
   }
 };
 
-
 exports.deleteAgent = async (req, res) => {
   try {
     const agent = await Agent.findByIdAndDelete(req.params.id);

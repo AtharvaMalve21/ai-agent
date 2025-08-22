@@ -1,18 +1,22 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const cookieParser = require("cookie-parser");
 require("dotenv").config();
-
 const connectDB = require("./config/db");
-
 const authRoutes = require("./routes/auth");
 const agentRoutes = require("./routes/agents");
 const listRoutes = require("./routes/lists");
-
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.CLIENT_URI,
+    credentials: true,
+  })
+);
+app.use(cookieParser());
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 

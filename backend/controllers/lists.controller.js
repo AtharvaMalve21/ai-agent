@@ -98,8 +98,10 @@ exports.getLists = async (req, res) => {
     const lists = await List.find()
       .populate("distributedData.agentId", "name email")
       .sort({ createdAt: -1 });
-
-    res.json(lists);
+    return res.status(200).json({
+      success: true,
+      data: lists,
+    });
   } catch (error) {
     console.error("Get lists error:", error);
     res.status(500).json({ message: "Server error" });
@@ -117,7 +119,10 @@ exports.getSingleList = async (req, res) => {
       return res.status(404).json({ message: "List not found" });
     }
 
-    res.json(list);
+    return res.status(200).json({
+      success: true,
+      data: list,
+    });
   } catch (error) {
     console.error("Get list error:", error);
     res.status(500).json({ message: "Server error" });

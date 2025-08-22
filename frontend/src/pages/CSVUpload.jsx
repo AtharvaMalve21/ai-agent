@@ -1,13 +1,11 @@
-import React,{useState} from "react";
-import { api } from "../../services/api.js";
-import { Upload, Check } from 'lucide-react';
+import React, { useState } from "react";
+import { api } from "../services/api.js";
+import { Upload } from 'lucide-react';
+import toast from 'react-hot-toast';
 
-
-const CSVUpload = ({ token }) => {
+const CSVUpload = () => {
     const [file, setFile] = useState(null);
     const [uploading, setUploading] = useState(false);
-    const [success, setSuccess] = useState('');
-    const [error, setError] = useState('');
     const [dragActive, setDragActive] = useState(false);
 
     const handleDrag = (e) => {
@@ -30,28 +28,44 @@ const CSVUpload = ({ token }) => {
             if (droppedFile.type === 'text/csv' || droppedFile.name.endsWith('.csv')) {
                 setFile(droppedFile);
             } else {
-                setError('Please select a CSV file');
+                toast.error('Please select a CSV file.');
+            }
+        }
+    };
+
+    const handleFileSelect = (e) => {
+        const selectedFile = e.target.files[0];
+        if (selectedFile) {
+            if (selectedFile.type === 'text/csv' || selectedFile.name.endsWith('.csv')) {
+                setFile(selectedFile);
+            } else {
+                toast.error('Please select a CSV file.');
+                setFile(null);
             }
         }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
         if (!file) {
-            setError('Please select a file');
+            toast.error('Please select a file to upload.');
             return;
         }
 
         setUploading(true);
-        setError('');
-        setSuccess('');
 
         try {
-            const result = await api.uploadCSV(file, token);
-            setSuccess('CSV uploaded and distributed successfully!');
+            await api.uploadCSV(file);
+            toast.success('CSV uploaded and distributed successfully!');
             setFile(null);
+            // Reset the file input for a clean state
+            if (document.getElementById('csv-upload')) {
+                document.getElementById('csv-upload').value = '';
+            }
         } catch (err) {
-            setError('Failed to upload CSV. Please check the file format.');
+            console.error('Error uploading CSV:', err);
+            // The API interceptor will handle displaying the error toast.
         } finally {
             setUploading(false);
         }
@@ -61,43 +75,41 @@ const CSVUpload = ({ token }) => {
         <div className="p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Upload CSV Lists</h2>
 
-            {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-                    {error}
-                </div>
-            )}
-
-            {success && (
-                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4 flex items-center">
-                    <Check className="h-5 w-5 mr-2" />
-                    {success}
-                </div>
-            )}
-
             <div className="bg-white rounded-lg shadow p-6">
                 <form onSubmit={handleSubmit}>
                     <div
                         className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragActive
-                            ? 'border-blue-400 bg-blue-50'
-                            : file
-                                ? 'border-green-400 bg-green-50'
-                                : 'border-gray-300'
+                                ? 'border-blue-400 bg-blue-50'
+                                : file
+                                    ? 'border-green-400 bg-green-50'
+                                    : 'border-gray-300'
                             }`}
                         onDragEnter={handleDrag}
                         onDragLeave={handleDrag}
                         onDragOver={handleDrag}
                         onDrop={handleDrop}
                     >
-                        <Upload className={`mx-auto h-12 w-12 mb-4 ${file ? 'text-green-500' : 'text-gray-400'
-                            }`} />
+                        <Upload className={`mx-auto h-12 w-12 mb-4 ${file ? 'text-green-500' : 'text-gray-400'}`} />
 
                         {file ? (
                             <div>
                                 <p className="text-lg font-medium text-green-700 mb-2">File Selected:</p>
-                                <p className="text-sm text-gray-600">{file.name}</p>
+                                <p className="text-sm text-gray-600 font-medium">{file.name}</p>
                                 <p className="text-xs text-gray-500 mt-1">
                                     Size: {(file.size / 1024).toFixed(2)} KB
                                 </p>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setFile(null);
+                                        if (document.getElementById('csv-upload')) {
+                                            document.getElementById('csv-upload').value = '';
+                                        }
+                                    }}
+                                    className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+                                >
+                                    Remove file
+                                </button>
                             </div>
                         ) : (
                             <div>
@@ -105,7 +117,7 @@ const CSVUpload = ({ token }) => {
                                     Drop your CSV file here, or click to select
                                 </p>
                                 <p className="text-sm text-gray-500 mb-4">
-                                    Supports CSV files with FirstName, Phone, Notes columns
+                                    Supports CSV files with **FirstName, Phone, Notes** columns
                                 </p>
                             </div>
                         )}
@@ -113,15 +125,20 @@ const CSVUpload = ({ token }) => {
                         <input
                             type="file"
                             accept=".csv"
-                            onChange={(e) => setFile(e.target.files[0])}
+                            onChange={handleFileSelect}
                             className="hidden"
                             id="csv-upload"
+                            disabled={uploading}
                         />
                         <label
                             htmlFor="csv-upload"
-                            className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg cursor-pointer hover:bg-blue-700 transition-colors"
+                            className={`inline-block px-6 py-2 rounded-lg cursor-pointer transition-colors ${
+                                uploading 
+                                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                            }`}
                         >
-                            Choose File
+                            {file ? 'Change File' : 'Choose File'}
                         </label>
                     </div>
 
@@ -129,7 +146,7 @@ const CSVUpload = ({ token }) => {
                         <button
                             type="submit"
                             disabled={!file || uploading}
-                            className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                         >
                             {uploading ? 'Uploading and Distributing...' : 'Upload and Distribute'}
                         </button>
@@ -154,4 +171,5 @@ const CSVUpload = ({ token }) => {
         </div>
     );
 };
-export default CSVUpload
+
+export default CSVUpload;

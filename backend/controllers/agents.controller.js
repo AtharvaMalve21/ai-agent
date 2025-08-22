@@ -3,7 +3,10 @@ const Agent = require("../models/Agent");
 exports.getAgents = async (req, res) => {
   try {
     const agents = await Agent.find().select("-password");
-    res.json(agents);
+    return res.status(200).json({
+      success: true,
+      data: agents,
+    });
   } catch (error) {
     console.error("Get agents error:", error);
     res.status(500).json({ message: "Server error" });
@@ -38,13 +41,9 @@ exports.addAgent = async (req, res) => {
     await agent.save();
 
     res.status(201).json({
+      success: true,
       message: "Agent created successfully",
-      agent: {
-        id: agent._id,
-        name: agent.name,
-        email: agent.email,
-        mobile: agent.mobile,
-      },
+      data: agent,
     });
   } catch (error) {
     console.error("Create agent error:", error);
@@ -56,11 +55,14 @@ exports.deleteAgent = async (req, res) => {
   try {
     const agent = await Agent.findByIdAndDelete(req.params.id);
     if (!agent) {
-      return res.status(404).json({ message: 'Agent not found.' });
+      return res.status(404).json({ message: "Agent not found." });
     }
-    res.json({ message: 'Agent deleted successfully' });
+    res.status(200).json({
+      success: true,
+      message: "Agent deleted successfully",
+    });
   } catch (error) {
-    console.error('Delete agent error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Delete agent error:", error);
+    res.status(500).json({ message: "Server error" });
   }
-}
+};

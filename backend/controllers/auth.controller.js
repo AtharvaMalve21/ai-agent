@@ -48,7 +48,8 @@ exports.register = async (req, res) => {
 
     res.cookie("token", token, cookieOptions);
 
-    res.status(201).json({
+    return res.status(201).json({
+      success: true,
       message: "User created successfully",
       data: newUser,
     });
@@ -113,6 +114,10 @@ exports.logout = async (req, res) => {
       sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
     };
     res.clearCookie("token", cookieOptions);
+    return res.status(200).json({
+      success: true,
+      message: "User is successfully logged out.",
+    });
   } catch (err) {
     res.status(500).json({
       success: false,
@@ -130,12 +135,5 @@ exports.verify = async (req, res) => {
     success: true,
     data: user,
     message: "User data fetched.",
-  });
-
-  res.json({
-    user: {
-      id: req.user._id,
-      email: req.user.email,
-    },
   });
 };
